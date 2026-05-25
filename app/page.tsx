@@ -11,12 +11,20 @@ export default function Home() {
             记录今天，让明天更好
           </p>
         </div>
-        <Link
-          href="/history"
-          className="text-sm text-gray-300 hover:text-gray-500 transition-colors"
-        >
-          历史记录 →
-        </Link>
+        <div className="flex gap-4">
+          <Link
+            href="/trend"
+            className="text-sm text-gray-300 hover:text-gray-500 transition-colors"
+          >
+            情绪趋势
+          </Link>
+          <Link
+            href="/history"
+            className="text-sm text-gray-300 hover:text-gray-500 transition-colors"
+          >
+            历史记录 →
+          </Link>
+        </div>
       </div>
 
       {/* 输入表单 */}

@@ -26,6 +26,19 @@ const EMOJI_MAP: Record<string, string> = {
   "明日建议": "💡",
 };
 
+const TAG_COLORS: Record<string, string> = {
+  "高效": "bg-emerald-50 text-emerald-600",
+  "拖延": "bg-orange-50 text-orange-600",
+  "焦虑": "bg-red-50 text-red-500",
+  "学习": "bg-blue-50 text-blue-600",
+  "摸鱼": "bg-gray-50 text-gray-500",
+  "高压": "bg-purple-50 text-purple-600",
+  "稳定": "bg-teal-50 text-teal-600",
+  "混乱": "bg-pink-50 text-pink-600",
+  "充实": "bg-green-50 text-green-600",
+  "疲惫": "bg-amber-50 text-amber-600",
+};
+
 interface Evaluation {
   accurate: boolean | null;
   useful: boolean | null;
@@ -41,6 +54,7 @@ interface Review {
   mood: number;
   problem: string;
   result: string;
+  tags?: string[];
   evaluation?: Evaluation;
 }
 
@@ -110,7 +124,6 @@ export default function ResultCard() {
 
   return (
     <div className="space-y-8">
-      {/* 日期和摘要 */}
       <div className="text-sm text-gray-400 space-y-1 pb-6 border-b border-gray-100">
         <p>
           {new Date(review.date).toLocaleString("zh-CN", {
@@ -125,27 +138,39 @@ export default function ResultCard() {
           记录了 {review.content.length} 字 · 心情 {review.mood}/10
           {review.problem ? " · 记录了问题" : ""}
         </p>
+        {review.tags && review.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-1">
+            {review.tags.map((tag) => (
+              <span
+                key={tag}
+                className={`text-xs px-2 py-0.5 rounded-full ${TAG_COLORS[tag] || "bg-gray-50 text-gray-500"}`}
+              >
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
-      {/* 结构化结果卡片 */}
+      {/* 结构化结果 */}
       <div className="space-y-6">
-        {sections.map((section) => (
-          <div key={section.title}>
-            <h3 className="text-base font-medium text-gray-800 mb-2">
-              {EMOJI_MAP[section.title] || ""} {section.title}
-            </h3>
-            <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
-              {section.content}
-            </p>
-          </div>
-        ))}
+        {sections
+          .filter((s) => s.title !== "标签")
+          .map((section) => (
+            <div key={section.title}>
+              <h3 className="text-base font-medium text-gray-800 mb-2">
+                {EMOJI_MAP[section.title] || ""} {section.title}
+              </h3>
+              <p className="text-gray-600 leading-relaxed whitespace-pre-wrap">
+                {section.content}
+              </p>
+            </div>
+          ))}
       </div>
 
       {/* 评价区 */}
       <div className="pt-6 border-t border-gray-100 space-y-5">
         <h3 className="text-sm font-medium text-gray-500">评价这次复盘</h3>
-
-        {/* 四维评分 */}
         <div className="flex flex-wrap gap-2">
           {RATING_BUTTONS.map(({ key, label }) => {
             const val = eval_[key] as boolean | null;
@@ -166,8 +191,6 @@ export default function ResultCard() {
             );
           })}
         </div>
-
-        {/* 问题备注 */}
         <div>
           <label className="block text-xs font-medium text-gray-400 mb-2">
             哪里不满意？（可选）
@@ -180,7 +203,6 @@ export default function ResultCard() {
             className="w-full resize-none border-0 border-b border-gray-100 bg-transparent pb-2 text-sm text-gray-600 placeholder-gray-300 outline-none focus:border-gray-300"
           />
         </div>
-
         <button
           onClick={handleSave}
           className={`px-4 py-1.5 text-sm rounded-lg border transition-colors ${
@@ -193,13 +215,12 @@ export default function ResultCard() {
         </button>
       </div>
 
-      {/* 底部导航 */}
       <div className="pt-6 border-t border-gray-100 flex justify-between">
         <Link href="/" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
           ← 重新复盘
         </Link>
-        <Link href="/history" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
-          历史记录 →
+        <Link href="/trend" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+          情绪趋势 →
         </Link>
       </div>
     </div>

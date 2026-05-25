@@ -23,12 +23,47 @@ const SYSTEM_PROMPT = `你是一个专业的个人成长分析助手，专注于
 【明日建议】
 给出1-3条可执行建议，必须具体、可执行，不要空话
 
+【标签】
+根据用户状态输出1-3个标签，用逗号分隔。可选标签：高效、拖延、焦虑、学习、摸鱼、高压、稳定、混乱、充实、疲惫
+
 要求：
 - 全部中文输出
 - 语气自然
 - 不要使用英文术语
 - 不要扩展无关内容
 - 不要输出多余标题或解释`;
+
+const TAG_LIST = ["高效", "拖延", "焦虑", "学习", "摸鱼", "高压", "稳定", "混乱", "充实", "疲惫"];
+
+function fallbackTags(content: string, problem: string): string[] {
+  const text = content + (problem || "");
+  const tags: string[] = [];
+  const rules: [string[], string][] = [
+    [["拖延", "没做", "没完成", "拖", "搁置", "懒得", "不想做"], "拖延"],
+    [["焦虑", "压力", "紧张", "担心", "害怕", "崩溃"], "焦虑"],
+    [["高效", "完成很多", "做了很多", "充实", "效率高", "专注"], "高效"],
+    [["学习", "论文", "看书", "读书", "课程", "考试", "复习"], "学习"],
+    [["摸鱼", "玩手机", "刷视频", "打游戏", "看剧", "追剧", "没干什么"], "摸鱼"],
+    [["高压", "deadline", "截止", "赶", "加班", "熬夜"], "高压"],
+    [["疲惫", "累", "困", "没精神", "乏力", "睡眠"], "疲惫"],
+  ];
+  for (const [keywords, tag] of rules) {
+    if (keywords.some((kw) => text.includes(kw)) && !tags.includes(tag)) {
+      tags.push(tag);
+    }
+  }
+  return tags.slice(0, 3);
+}
+
+function parseTags(raw: string): string[] {
+  const match = raw.match(/【标签】\s*([\s\S]*?)(?=【|$)/);
+  if (!match) return [];
+  return match[1]
+    .split(/[,，、]/)
+    .map((t: string) => t.trim())
+    .filter((t: string) => TAG_LIST.includes(t))
+    .slice(0, 3);
+}
 
 export default function ReviewForm() {
   const router = useRouter();
@@ -84,7 +119,9 @@ export default function ReviewForm() {
         throw new Error(data.error?.message || `API 调用失败 (${res.status})`);
       }
 
-      const result = data.choices[0].message.content;
+      const rawResult = data.choices[0].message.content;
+      const tags = parseTags(rawResult);
+      const finalTags = tags.length > 0 ? tags : fallbackTags(content, problem);
 
       const review = {
         id: Date.now(),
@@ -92,7 +129,8 @@ export default function ReviewForm() {
         content,
         mood,
         problem,
-        result,
+        result: rawResult,
+        tags: finalTags,
       };
       const history = JSON.parse(localStorage.getItem("reviews") || "[]");
       history.unshift(review);
