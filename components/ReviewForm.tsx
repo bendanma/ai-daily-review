@@ -53,9 +53,21 @@ export default function ReviewForm() {
 
       const result = data.result;
 
-      localStorage.setItem("review-result", result);
+      // 保存到历史记录
+      const review = {
+        id: Date.now(),
+        date: new Date().toISOString(),
+        content,
+        mood,
+        problem,
+        result,
+      };
+      const history = JSON.parse(localStorage.getItem("reviews") || "[]");
+      history.unshift(review);
+      localStorage.setItem("reviews", JSON.stringify(history));
       localStorage.setItem("user-api-key", apiKey);
-      router.push("/result");
+
+      router.push(`/result?id=${review.id}`);
     } catch (err: any) {
       setError(err.message || "生成失败，请稍后重试");
     } finally {

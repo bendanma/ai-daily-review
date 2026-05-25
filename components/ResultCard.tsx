@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import Link from "next/link";
 
 function parseResult(text: string) {
@@ -25,27 +26,27 @@ const EMOJI_MAP: Record<string, string> = {
   "明日建议": "💡",
 };
 
+interface Review {
+  id: number;
+  date: string;
+  content: string;
+  mood: number;
+  problem: string;
+  result: string;
+}
+
 export default function ResultCard() {
-  const [result, setResult] = useState<string | null>(null);
-  const [input, setInput] = useState<{
-    content: string;
-    mood: number;
-    problem: string;
-  } | null>(null);
+  const searchParams = useSearchParams();
+  const id = searchParams.get("id");
+  const [review, setReview] = useState<Review | null>(null);
 
   useEffect(() => {
-    const storedResult = localStorage.getItem("review-result");
-    const storedInput = localStorage.getItem("review-input");
+    const history = JSON.parse(localStorage.getItem("reviews") || "[]");
+    const found = history.find((r: Review) => r.id === Number(id));
+    setReview(found || null);
+  }, [id]);
 
-    if (storedResult) {
-      setResult(storedResult);
-    }
-    if (storedInput) {
-      setInput(JSON.parse(storedInput));
-    }
-  }, []);
-
-  if (!result) {
+  if (!review) {
     return (
       <div className="text-center py-20">
         <p className="text-gray-400">暂无复盘结果</p>
@@ -59,19 +60,26 @@ export default function ResultCard() {
     );
   }
 
-  const sections = parseResult(result);
+  const sections = parseResult(review.result);
 
   return (
     <div className="space-y-8">
-      {/* 输入摘要 */}
-      {input && (
-        <div className="text-sm text-gray-400 space-y-1 pb-6 border-b border-gray-100">
-          <p>
-            今日记录了 {input.content.length} 字 · 心情 {input.mood}/10
-            {input.problem ? ` · 记录了问题` : ""}
-          </p>
-        </div>
-      )}
+      {/* 日期和摘要 */}
+      <div className="text-sm text-gray-400 space-y-1 pb-6 border-b border-gray-100">
+        <p>
+          {new Date(review.date).toLocaleString("zh-CN", {
+            month: "long",
+            day: "numeric",
+            weekday: "long",
+            hour: "2-digit",
+            minute: "2-digit",
+          })}
+        </p>
+        <p>
+          记录了 {review.content.length} 字 · 心情 {review.mood}/10
+          {review.problem ? " · 记录了问题" : ""}
+        </p>
+      </div>
 
       {/* 结构化结果卡片 */}
       <div className="space-y-6">
@@ -87,13 +95,19 @@ export default function ResultCard() {
         ))}
       </div>
 
-      {/* 返回按钮 */}
-      <div className="pt-6 border-t border-gray-100">
+      {/* 底部 */}
+      <div className="pt-6 border-t border-gray-100 flex justify-between">
         <Link
           href="/"
-          className="inline-flex items-center text-sm text-gray-400 hover:text-gray-600 transition-colors"
+          className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
         >
           ← 重新复盘
+        </Link>
+        <Link
+          href="/history"
+          className="text-sm text-gray-400 hover:text-gray-600 transition-colors"
+        >
+          历史记录 →
         </Link>
       </div>
     </div>
