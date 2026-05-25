@@ -3,7 +3,32 @@
 import { useState, FormEvent } from "react";
 import { useRouter } from "next/navigation";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8787";
+const DEEPSEEK_URL = "https://api.deepseek.com/chat/completions";
+
+const SYSTEM_PROMPT = `你是一个专业的个人成长分析助手，专注于帮助中国大学生和研究生进行每日复盘分析。
+
+你的任务是根据用户输入内容，生成结构化复盘。
+
+输出必须严格按照以下格式：
+
+【今日总结】
+对用户一天行为进行结构化总结
+
+【情绪分析】
+分析用户当前心理状态，用中文表达，不要说教
+
+【问题识别】
+指出核心问题，如果没有问题则输出"暂无明显问题"
+
+【明日建议】
+给出1-3条可执行建议，必须具体、可执行，不要空话
+
+要求：
+- 全部中文输出
+- 语气自然
+- 不要使用英文术语
+- 不要扩展无关内容
+- 不要输出多余标题或解释`;
 
 export default function ReviewForm() {
   const router = useRouter();
@@ -34,26 +59,33 @@ export default function ReviewForm() {
     setLoading(true);
 
     try {
-      localStorage.setItem(
-        "review-input",
-        JSON.stringify({ content, mood, problem })
-      );
+      const userMessage = `今日做了：\n${content}\n\n情绪评分：\n${mood}/10\n\n当前问题：\n${problem || "无"}`;
 
-      const res = await fetch(API_URL, {
+      const res = await fetch(DEEPSEEK_URL, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ content, mood, problem: problem || undefined, apiKey: apiKey || undefined }),
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${apiKey}`,
+        },
+        body: JSON.stringify({
+          model: "deepseek-chat",
+          messages: [
+            { role: "system", content: SYSTEM_PROMPT },
+            { role: "user", content: userMessage },
+          ],
+          temperature: 0.7,
+          max_tokens: 2000,
+        }),
       });
 
       const data = await res.json();
 
       if (!res.ok) {
-        throw new Error(data.error || `请求失败 (${res.status})`);
+        throw new Error(data.error?.message || `API 调用失败 (${res.status})`);
       }
 
-      const result = data.result;
+      const result = data.choices[0].message.content;
 
-      // 保存到历史记录
       const review = {
         id: Date.now(),
         date: new Date().toISOString(),
@@ -77,7 +109,6 @@ export default function ReviewForm() {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-8">
-      {/* 今日做了什么 */}
       <div>
         <label className="block text-sm font-medium text-gray-500 mb-2">
           今日做了什么
@@ -91,7 +122,6 @@ export default function ReviewForm() {
         />
       </div>
 
-      {/* 心情评分 */}
       <div>
         <label className="block text-sm font-medium text-gray-500 mb-3">
           心情评分：<span className="text-gray-800 font-semibold">{mood} / 10</span>
@@ -110,7 +140,6 @@ export default function ReviewForm() {
         </div>
       </div>
 
-      {/* 当前问题 */}
       <div>
         <label className="block text-sm font-medium text-gray-500 mb-2">
           当前问题 <span className="text-gray-300">（可选）</span>
@@ -124,7 +153,6 @@ export default function ReviewForm() {
         />
       </div>
 
-      {/* API Key */}
       <div>
         <label className="block text-sm font-medium text-gray-500 mb-2">
           DeepSeek API Key <span className="text-red-300">*</span>
