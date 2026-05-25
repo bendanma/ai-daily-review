@@ -3,6 +3,14 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 
+interface Evaluation {
+  accurate: boolean | null;
+  useful: boolean | null;
+  surprising: boolean | null;
+  wantToShare: boolean | null;
+  notes: string;
+}
+
 interface Review {
   id: number;
   date: string;
@@ -10,7 +18,15 @@ interface Review {
   mood: number;
   problem: string;
   result: string;
+  evaluation?: Evaluation;
 }
+
+const BADGE_LABELS: { key: keyof Evaluation; label: string }[] = [
+  { key: "accurate", label: "准确" },
+  { key: "useful", label: "有用" },
+  { key: "surprising", label: "惊喜" },
+  { key: "wantToShare", label: "想分享" },
+];
 
 export default function HistoryPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
@@ -57,44 +73,80 @@ export default function HistoryPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {reviews.map((review) => (
-            <Link
-              key={review.id}
-              href={`/result?id=${review.id}`}
-              className="block p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors group"
-            >
-              <div className="flex items-center justify-between mb-2">
-                <span className="text-xs text-gray-400">
-                  {new Date(review.date).toLocaleString("zh-CN", {
-                    month: "long",
-                    day: "numeric",
-                    weekday: "long",
-                    hour: "2-digit",
-                    minute: "2-digit",
-                  })}
-                </span>
-                <div className="flex items-center gap-3">
+          {reviews.map((review) => {
+            const ev = review.evaluation;
+            const goodCount = ev
+              ? BADGE_LABELS.filter((b) => ev[b.key] === true).length
+              : -1;
+
+            return (
+              <Link
+                key={review.id}
+                href={`/result?id=${review.id}`}
+                className="block p-4 border border-gray-100 rounded-lg hover:border-gray-200 transition-colors group"
+              >
+                <div className="flex items-center justify-between mb-2">
                   <span className="text-xs text-gray-400">
-                    心情 {review.mood}/10
+                    {new Date(review.date).toLocaleString("zh-CN", {
+                      month: "long",
+                      day: "numeric",
+                      weekday: "long",
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
                   </span>
-                  <button
-                    onClick={(e) => deleteReview(review.id, e)}
-                    className="text-xs text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
-                  >
-                    删除
-                  </button>
+                  <div className="flex items-center gap-3">
+                    <span className="text-xs text-gray-400">
+                      心情 {review.mood}/10
+                    </span>
+                    <button
+                      onClick={(e) => deleteReview(review.id, e)}
+                      className="text-xs text-gray-300 hover:text-red-400 transition-colors opacity-0 group-hover:opacity-100"
+                    >
+                      删除
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <p className="text-sm text-gray-600 line-clamp-2">
-                {review.content}
-              </p>
-              {review.result && (
-                <p className="text-xs text-gray-300 mt-2 line-clamp-1">
-                  {review.result.slice(0, 80)}...
+                <p className="text-sm text-gray-600 line-clamp-2">
+                  {review.content}
                 </p>
-              )}
-            </Link>
-          ))}
+
+                {/* 评价标签 */}
+                {ev && (
+                  <div className="flex flex-wrap gap-1.5 mt-2">
+                    {BADGE_LABELS.map(({ key, label }) =>
+                      ev[key] === true ? (
+                        <span
+                          key={key}
+                          className="text-xs px-1.5 py-0.5 rounded bg-emerald-50 text-emerald-600"
+                        >
+                          {label}
+                        </span>
+                      ) : ev[key] === false ? (
+                        <span
+                          key={key}
+                          className="text-xs px-1.5 py-0.5 rounded bg-red-50 text-red-400"
+                        >
+                          ✗{label}
+                        </span>
+                      ) : null
+                    )}
+                    {ev.notes && (
+                      <span className="text-xs text-gray-400 truncate max-w-[200px]">
+                        {ev.notes}
+                      </span>
+                    )}
+                  </div>
+                )}
+
+                {!ev && (
+                  <span className="text-xs text-gray-300 mt-1 inline-block">
+                    未评价
+                  </span>
+                )}
+              </Link>
+            );
+          })}
         </div>
       )}
 
