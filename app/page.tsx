@@ -13,6 +13,12 @@ export default function Home() {
         </div>
         <div className="flex gap-4">
           <Link
+            href="/goal"
+            className="text-sm text-gray-300 hover:text-gray-500 transition-colors"
+          >
+            成长教练
+          </Link>
+          <Link
             href="/trend"
             className="text-sm text-gray-300 hover:text-gray-500 transition-colors"
           >
@@ -22,7 +28,7 @@ export default function Home() {
             href="/history"
             className="text-sm text-gray-300 hover:text-gray-500 transition-colors"
           >
-            历史记录 →
+            历史 →
           </Link>
         </div>
       </div>
