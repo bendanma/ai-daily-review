@@ -21,22 +21,39 @@ interface Goal {
   createdAt: string;
 }
 
-export default function GoalDashboard({ goal, onUpdate }: { goal: Goal; onUpdate: (g: Goal) => void }) {
+export default function GoalDashboard({
+  goal,
+  onUpdate,
+  onDelete,
+}: {
+  goal: Goal;
+  onUpdate: (g: Goal) => void;
+  onDelete: () => void;
+}) {
   const [logContent, setLogContent] = useState("");
   const [logCompletion, setLogCompletion] = useState(7);
   const [logProblem, setLogProblem] = useState("");
   const [logLoading, setLogLoading] = useState(false);
   const [coachLoading, setCoachLoading] = useState(false);
   const [coaching, setCoaching] = useState<string | null>(null);
+  const [editingTime, setEditingTime] = useState(false);
+  const [editMinutes, setEditMinutes] = useState(goal.dailyMinutes);
 
   const doneCount = goal.plan.filter((p) => p.done).length;
   const progress = goal.plan.length > 0 ? Math.round((doneCount / goal.plan.length) * 100) : 0;
 
+  function save(g: Goal) {
+    onUpdate(g);
+  }
+
   function toggleDay(day: number) {
     const updated = goal.plan.map((p) => (p.day === day ? { ...p, done: !p.done } : p));
-    const newGoal = { ...goal, plan: updated };
-    localStorage.setItem("current-goal", JSON.stringify(newGoal));
-    onUpdate(newGoal);
+    save({ ...goal, plan: updated });
+  }
+
+  function handleSaveTime() {
+    save({ ...goal, dailyMinutes: editMinutes });
+    setEditingTime(false);
   }
 
   async function handleAddLog(e: FormEvent) {
@@ -50,19 +67,12 @@ export default function GoalDashboard({ goal, onUpdate }: { goal: Goal; onUpdate
       problem: logProblem.trim(),
     };
 
-    // 标记当天 plan 为完成
     const todayIndex = goal.logs.length;
     const updatedPlan = goal.plan.map((p, i) =>
       i === todayIndex ? { ...p, done: true } : p
     );
 
-    const newGoal = {
-      ...goal,
-      logs: [...goal.logs, newLog],
-      plan: updatedPlan,
-    };
-    localStorage.setItem("current-goal", JSON.stringify(newGoal));
-    onUpdate(newGoal);
+    save({ ...goal, logs: [...goal.logs, newLog], plan: updatedPlan });
     setLogContent("");
     setLogProblem("");
     setLogCompletion(7);
@@ -120,9 +130,43 @@ export default function GoalDashboard({ goal, onUpdate }: { goal: Goal; onUpdate
       {/* 目标信息 */}
       <div>
         <h2 className="text-lg font-medium text-gray-800">{goal.goal}</h2>
-        <p className="text-sm text-gray-400 mt-1">
-          每天 {goal.dailyMinutes} 分钟 · {goal.days} 天计划 · 已坚持 {goal.logs.length} 天
-        </p>
+        <div className="flex items-center gap-3 mt-1">
+          {editingTime ? (
+            <div className="flex items-center gap-2">
+              <input
+                type="number"
+                value={editMinutes}
+                onChange={(e) => setEditMinutes(Math.max(1, Number(e.target.value)))}
+                className="w-16 border-b border-gray-300 bg-transparent text-sm text-gray-800 outline-none"
+              />
+              <span className="text-sm text-gray-400">分钟/天</span>
+              <button
+                onClick={handleSaveTime}
+                className="text-xs text-indigo-500 hover:text-indigo-600"
+              >
+                保存
+              </button>
+              <button
+                onClick={() => setEditingTime(false)}
+                className="text-xs text-gray-300 hover:text-gray-500"
+              >
+                取消
+              </button>
+            </div>
+          ) : (
+            <>
+              <p className="text-sm text-gray-400">
+                每天 {goal.dailyMinutes} 分钟 · {goal.days} 天计划 · 已坚持 {goal.logs.length} 天
+              </p>
+              <button
+                onClick={() => { setEditMinutes(goal.dailyMinutes); setEditingTime(true); }}
+                className="text-xs text-gray-300 hover:text-gray-500 transition-colors"
+              >
+                修改时长
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* 进度条 */}
@@ -143,7 +187,7 @@ export default function GoalDashboard({ goal, onUpdate }: { goal: Goal; onUpdate
       <div>
         <h3 className="text-sm font-medium text-gray-500 mb-3">学习计划</h3>
         <div className="space-y-1 max-h-80 overflow-y-auto">
-          {goal.plan.map((p, i) => (
+          {goal.plan.map((p) => (
             <button
               key={p.day}
               onClick={() => toggleDay(p.day)}
@@ -250,16 +294,8 @@ export default function GoalDashboard({ goal, onUpdate }: { goal: Goal; onUpdate
         )}
       </div>
 
-      {/* 重置 */}
-      <button
-        onClick={() => {
-          if (confirm("确定要删除当前目标吗？")) {
-            localStorage.removeItem("current-goal");
-            onUpdate(null as any);
-          }
-        }}
-        className="text-xs text-gray-300 hover:text-red-400 transition-colors"
-      >
+      {/* 删除 */}
+      <button onClick={onDelete} className="text-xs text-gray-300 hover:text-red-400 transition-colors">
         删除目标
       </button>
     </div>

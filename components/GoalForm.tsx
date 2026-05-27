@@ -88,7 +88,6 @@ Day 2：具体任务
         createdAt: new Date().toISOString(),
       };
 
-      localStorage.setItem("current-goal", JSON.stringify(newGoal));
       onCreated(newGoal);
     } catch (err: any) {
       setError(err.message || "创建失败");
