@@ -115,31 +115,27 @@ Day 2：具体任务
       <div className="grid grid-cols-2 gap-6">
         <div>
           <label className="block text-sm font-medium text-gray-500 mb-2">
-            每天可用时间
+            每天可用时间（分钟）
           </label>
-          <select
+          <input
+            type="number"
             value={dailyMinutes}
-            onChange={(e) => setDailyMinutes(Number(e.target.value))}
-            className="w-full border-0 border-b border-gray-200 bg-transparent pb-2 text-gray-800 outline-none focus:border-gray-400"
-          >
-            {[15, 30, 45, 60, 90, 120].map((m) => (
-              <option key={m} value={m}>{m} 分钟</option>
-            ))}
-          </select>
+            onChange={(e) => setDailyMinutes(Math.max(1, Number(e.target.value)))}
+            placeholder="30"
+            className="w-full border-0 border-b border-gray-200 bg-transparent pb-2 text-gray-800 placeholder-gray-300 outline-none focus:border-gray-400"
+          />
         </div>
         <div>
           <label className="block text-sm font-medium text-gray-500 mb-2">
-            学习周期
+            学习周期（天）
           </label>
-          <select
+          <input
+            type="number"
             value={days}
-            onChange={(e) => setDays(Number(e.target.value))}
-            className="w-full border-0 border-b border-gray-200 bg-transparent pb-2 text-gray-800 outline-none focus:border-gray-400"
-          >
-            {[7, 14, 21, 30, 60, 90].map((d) => (
-              <option key={d} value={d}>{d} 天</option>
-            ))}
-          </select>
+            onChange={(e) => setDays(Math.max(1, Number(e.target.value)))}
+            placeholder="14"
+            className="w-full border-0 border-b border-gray-200 bg-transparent pb-2 text-gray-800 placeholder-gray-300 outline-none focus:border-gray-400"
+          />
         </div>
       </div>
 
