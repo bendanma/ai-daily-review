@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
+import ShareCard from "@/components/ShareCard";
 
 const TrendChart = dynamic(() => import("@/components/TrendChart"), { ssr: false });
 
@@ -75,6 +76,7 @@ function analyze(reviews: Review[]) {
 
 export default function TrendPage() {
   const [reviews, setReviews] = useState<Review[]>([]);
+  const [showShare, setShowShare] = useState(false);
 
   useEffect(() => {
     setReviews(JSON.parse(localStorage.getItem("reviews") || "[]"));
@@ -89,9 +91,17 @@ export default function TrendPage() {
           <h1 className="text-2xl font-semibold text-gray-800">情绪趋势</h1>
           <p className="text-sm text-gray-400 mt-2">追踪你的情绪变化</p>
         </div>
-        <Link href="/" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
-          + 新增复盘
-        </Link>
+        <div className="flex gap-4 items-center">
+          <button
+            onClick={() => setShowShare(true)}
+            className="text-sm text-indigo-400 hover:text-indigo-600 transition-colors"
+          >
+            生成分享卡
+          </button>
+          <Link href="/" className="text-sm text-gray-400 hover:text-gray-600 transition-colors">
+            + 新增复盘
+          </Link>
+        </div>
       </div>
 
       {/* 折线图 */}
@@ -200,6 +210,8 @@ export default function TrendPage() {
           历史记录 →
         </Link>
       </div>
+
+      <ShareCard open={showShare} onClose={() => setShowShare(false)} />
     </main>
   );
 }
